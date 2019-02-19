@@ -40,6 +40,7 @@ Generate self-signed TLS certificate using OpenSSL
   -d|--duration        Validity duration of the certificate (in days)
   -h|--help            Display this help and exit
   -v|--verbose         Verbose output
+  -f|--filename        Output file name
 "
 }
 
@@ -65,8 +66,9 @@ while [ "$1" != "" ]; do
     -n|--common-name) CN=$VALUE ;;
     -e|--email) emailAddress=$VALUE ;;
     -p|--path) OUTPATH=$VALUE; testPath ;;
-	-d|--duration) DURATION=$VALUE ;;
+	  -d|--duration) DURATION=$VALUE ;;
     -v|--verbose) VERBOSE=1 ;;
+    -f|--filename) FILENAME=$VALUE ;;
     *) echo "ERROR: unknown parameter \"$PARAM\""; help; exit 1 ;;
   esac
   shift
@@ -129,6 +131,7 @@ showVals() {
   echo "Output Path: ${OUTPATH}";
   echo "Certificate Duration (Days): ${DURATION}";
   echo "Verbose: ${VERBOSE}";
+  echo "File Name: ${FILENAME}";
 }
 
 # Init
@@ -178,7 +181,9 @@ EOF
 # Build TLS Certificate
 build() {
   # Santizie domain name for file name
-  FILENAME=${CN/\*\./}
+  if [ -z "$FILENAME" ]; then
+    FILENAME=${CN/\*\./}
+  fi
   # Generate CA key & crt
   openssl genrsa -out "${tmp}/tmp.key" 2048
   openssl req -x509 -new -nodes -key "${tmp}/tmp.key" -sha256 -days "${DURATION}" -out "${OUTPATH}${FILENAME}_CA.pem" -subj "/C=${C}/ST=${ST}/L=${L}/O=${O}/OU=${OU}/CN=${CN}/emailAddress=${emailAddress}"
@@ -200,3 +205,4 @@ checkVariables
 build
 # showVals
 safeExit
+
